@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Southern Arava R&D - Interactive Agrivoltaics</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #002147;
@@ -21,6 +22,10 @@
             background-color: #87CEEB;
         }
 
+        body.rtl {
+            font-family: 'Heebo', sans-serif;
+        }
+
         /* --- UI Overlay --- */
         
         /* 1. Header */
@@ -30,6 +35,11 @@
             left: 24px;
             pointer-events: none;
             z-index: 10;
+        }
+
+        body.rtl .header-container {
+            left: auto;
+            right: 24px;
         }
         
         .header-content {
@@ -44,21 +54,79 @@
             pointer-events: auto;
         }
 
+        body.rtl .header-content {
+            text-align: right;
+            direction: rtl;
+        }
+
         .header-content h1 { margin: 0; font-size: 1.4rem; color: white; font-weight: 700; text-transform: uppercase; }
         .header-content h2 { margin: 5px 0 0; font-size: 0.95rem; color: var(--accent); font-weight: 600; }
+
+        /* Language Toggle */
+        .lang-toggle-container {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            z-index: 15;
+            pointer-events: auto;
+        }
+
+        body.rtl .lang-toggle-container {
+            right: auto;
+            left: 24px;
+        }
+
+        .lang-toggle {
+            background: var(--bg-glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 25px;
+            padding: 6px 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-light);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .lang-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .lang-btn.active {
+            background: var(--accent);
+            color: white;
+        }
 
         /* 2. Legend (Right Panel) */
         .legend-container {
             position: absolute;
-            top: 24px;
+            top: 90px;
             right: 24px;
             display: flex;
             flex-direction: column;
             gap: 8px;
             pointer-events: auto;
             z-index: 10;
-            max-height: 90vh;
+            max-height: calc(90vh - 90px);
             overflow-y: auto;
+        }
+
+        body.rtl .legend-container {
+            right: auto;
+            left: 24px;
         }
 
         .legend-item {
@@ -79,10 +147,19 @@
             user-select: none;
         }
 
+        body.rtl .legend-item {
+            direction: rtl;
+            text-align: right;
+        }
+
         .legend-item:hover {
             transform: translateX(-5px);
             background: rgba(255, 255, 255, 0.2);
             border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        body.rtl .legend-item:hover {
+            transform: translateX(5px);
         }
 
         .legend-item.active {
@@ -93,16 +170,22 @@
             transform: translateX(-5px);
         }
 
+        body.rtl .legend-item.active {
+            transform: translateX(5px);
+        }
+
         .legend-number {
             background: white;
             color: var(--accent);
-            width: 24px; height: 24px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 0.8rem;
             font-weight: 800;
+            flex-shrink: 0;
         }
 
         .legend-item.active .legend-number {
@@ -131,6 +214,13 @@
             transform: translateY(20px);
         }
 
+        body.rtl #explainer-card {
+            left: auto;
+            right: 24px;
+            direction: rtl;
+            text-align: right;
+        }
+
         #explainer-card.visible {
             display: block;
             opacity: 1;
@@ -149,10 +239,17 @@
         #explainer-title { font-size: 1.2rem; font-weight: 700; color: var(--accent); margin: 0; }
         
         #explainer-id {
-            background: white; color: var(--accent); font-weight: 800;
-            width: 32px; height: 32px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
+            background: white;
+            color: var(--accent);
+            font-weight: 800;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 1.1rem;
+            flex-shrink: 0;
         }
 
         .stat-grid {
@@ -168,8 +265,21 @@
             border-radius: 6px;
         }
 
-        .stat-label { display: block; color: #8892B0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .stat-value { display: block; color: #fff; font-weight: 600; font-size: 0.95rem; }
+        .stat-label {
+            display: block;
+            color: #8892B0;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            display: block;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
 
         #explainer-desc {
             font-size: 0.9rem;
@@ -195,22 +305,40 @@
             transition: background 0.2s;
         }
 
+        body.rtl #close-btn {
+            right: auto;
+            left: 12px;
+        }
+
         #close-btn:hover {
             background: rgba(255,255,255,0.25);
         }
 
         /* Loading Screen */
         #loader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #0B2545; display: flex;
-            justify-content: center; align-items: center; flex-direction: column;
-            z-index: 100; transition: opacity 0.5s;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0B2545;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+            transition: opacity 0.5s;
         }
+
         .spinner {
-            width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1);
-            border-top-color: var(--accent); border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
             animation: spin 1s linear infinite;
         }
+
         @keyframes spin { to { transform: rotate(360deg); } }
 
     </style>
@@ -219,15 +347,23 @@
 
     <div id="loader">
         <div class="spinner"></div>
-        <p style="color:white; margin-top:20px; font-weight:500;">Loading Southern Arava R&D Center...</p>
+        <p id="loader-text" style="color:white; margin-top:20px; font-weight:500;">Loading Southern Arava R&D Center...</p>
+    </div>
+
+    <!-- Language Toggle -->
+    <div class="lang-toggle-container">
+        <div class="lang-toggle">
+            <button class="lang-btn active" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="he">עב</button>
+        </div>
     </div>
 
     <!-- Header -->
     <div class="header-container">
         <div class="header-content">
-            <h1>Southern Arava R&D</h1>
-            <h2>Hyper Arid Desert Agrivoltaics</h2>
-            <p style="font-size:0.8rem; margin:10px 0 0 0; color:#ccc;">Interactive Site Map (January 2026)</p>
+            <h1 id="header-title">Southern Arava R&D</h1>
+            <h2 id="header-subtitle">Hyper Arid Desert Agrivoltaics</h2>
+            <p id="header-date" style="font-size:0.8rem; margin:10px 0 0 0; color:#ccc;">Interactive Site Map (January 2026)</p>
         </div>
     </div>
 
@@ -244,19 +380,19 @@
         </div>
         <div class="stat-grid">
             <div class="stat-box">
-                <span class="stat-label">Axis Height</span>
+                <span class="stat-label" id="label-height">Axis Height</span>
                 <span class="stat-value" id="stat-height">--</span>
             </div>
             <div class="stat-box">
-                <span class="stat-label">Pitch/Span</span>
+                <span class="stat-label" id="label-pitch">Pitch/Span</span>
                 <span class="stat-value" id="stat-pitch">--</span>
             </div>
             <div class="stat-box">
-                <span class="stat-label">Coverage</span>
+                <span class="stat-label" id="label-cover">Coverage</span>
                 <span class="stat-value" id="stat-cover">--</span>
             </div>
             <div class="stat-box">
-                <span class="stat-label">Crop Type</span>
+                <span class="stat-label" id="label-crop">Crop Type</span>
                 <span class="stat-value" id="stat-crop">--</span>
             </div>
         </div>
@@ -283,45 +419,134 @@
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 
+        let currentLang = 'en';
+
+        const TRANSLATIONS = {
+            en: {
+                headerTitle: "Southern Arava R&D",
+                headerSubtitle: "Hyper Arid Desert Agrivoltaics",
+                headerDate: "Interactive Site Map (January 2026)",
+                loaderText: "Loading Southern Arava R&D Center...",
+                labelHeight: "Axis Height",
+                labelPitch: "Pitch/Span",
+                labelCover: "Coverage",
+                labelCrop: "Crop Type"
+            },
+            he: {
+                headerTitle: "מו\"פ ערבה דרומית",
+                headerSubtitle: "אגריוולטאיקה במדבר צחיח",
+                headerDate: "מפת אתר אינטראקטיבית (ינואר 2026)",
+                loaderText: "טוען את מרכז מו\"פ ערבה דרומית...",
+                labelHeight: "גובה ציר",
+                labelPitch: "מרווח/טווח",
+                labelCover: "כיסוי",
+                labelCrop: "סוג גידול"
+            }
+        };
+
         const SITE_DATA = {
             1: { 
-                title: "2P Tracker System", height: "3.5m", pitch: "11m", cover: "42%", crop: "Seasonal Veg", type: "2P",
-                desc: "High-clearance double-stacked (2P) panels allow for larger machinery access. This zone tests maximum ground coverage ratio in arid conditions.",
+                title: { en: "2P Tracker System", he: "מערכת עוקב 2P" },
+                height: { en: "3.5m", he: "3.5 מ'" },
+                pitch: { en: "11m", he: "11 מ'" },
+                cover: { en: "42%", he: "42%" },
+                crop: { en: "Seasonal Veg", he: "ירקות עונתיים" },
+                type: "2P",
+                desc: {
+                    en: "High-clearance double-stacked (2P) panels allow for larger machinery access. This zone tests maximum ground coverage ratio in arid conditions.",
+                    he: "פאנלים כפולים (2P) בגובה רב מאפשרים גישה למכונות גדולות. אזור זה בוחן יחס כיסוי קרקע מרבי בתנאי יובש."
+                },
                 pos: { x: 50, z: 30 }, dim: { w: 30, d: 25 }
             },
             2: { 
-                title: "1P Standard Tracker", height: "4m", pitch: "7m", cover: "34%", crop: "Future Greenhouse", type: "1P",
-                desc: "Standard single-axis tracker configuration. Currently prepared for future closed greenhouse integration to test humidity retention.",
+                title: { en: "1P Standard Tracker", he: "עוקב סטנדרטי 1P" },
+                height: { en: "4m", he: "4 מ'" },
+                pitch: { en: "7m", he: "7 מ'" },
+                cover: { en: "34%", he: "34%" },
+                crop: { en: "Future Greenhouse", he: "חממה עתידית" },
+                type: "1P",
+                desc: {
+                    en: "Standard single-axis tracker configuration. Currently prepared for future closed greenhouse integration to test humidity retention.",
+                    he: "תצורת עוקב חד-צירי סטנדרטית. מוכן כעת לשילוב חממה סגורה עתידית לבדיקת שימור לחות."
+                },
                 pos: { x: 5, z: 40 }, dim: { w: 45, d: 15 }
             },
             3: { 
-                title: "Vineyard Integration", height: "4m", pitch: "7m", cover: "34%", crop: "Grapes (2 var)", type: "Vineyard",
-                desc: "Specialized trellis system integrated directly into the solar structure posts. Row spacing is optimized for viticulture machinery.",
+                title: { en: "Vineyard Integration", he: "שילוב כרם" },
+                height: { en: "4m", he: "4 מ'" },
+                pitch: { en: "7m", he: "7 מ'" },
+                cover: { en: "34%", he: "34%" },
+                crop: { en: "Grapes (2 var)", he: "ענבים (2 זנים)" },
+                type: "Vineyard",
+                desc: {
+                    en: "Specialized trellis system integrated directly into the solar structure posts. Row spacing is optimized for viticulture machinery.",
+                    he: "מערכת הדליה מיוחדת משולבת ישירות בעמודי מבנה הסולארי. המרווח בין השורות מותאם למכונות גפנים."
+                },
                 pos: { x: 5, z: 10 }, dim: { w: 35, d: 30 }
             },
             4: { 
-                title: "Mizar East-West", height: "4m", pitch: "5.5m", cover: "44%", crop: "Field Crops", type: "EW",
-                desc: "East-West orientation ('Mizar') creates a flattened daily energy production curve and provides high density shading for light-sensitive crops.",
+                title: { en: "Mizar East-West", he: "מיזר מזרח-מערב" },
+                height: { en: "4m", he: "4 מ'" },
+                pitch: { en: "5.5m", he: "5.5 מ'" },
+                cover: { en: "44%", he: "44%" },
+                crop: { en: "Field Crops", he: "גידולי שדה" },
+                type: "EW",
+                desc: {
+                    en: "East-West orientation ('Mizar') creates a flattened daily energy production curve and provides high density shading for light-sensitive crops.",
+                    he: "כיוון מזרח-מערב ('מיזר') יוצר עקומת ייצור אנרגיה יומית שטוחה ומספק הצללה צפופה לגידולים רגישים לאור."
+                },
                 pos: { x: 50, z: -5 }, dim: { w: 25, d: 25 }
             },
             5: { 
-                title: "Seasonal Crops", height: "4m", pitch: "6.6m", cover: "36%", crop: "Potatoes/Greens", type: "1P",
-                desc: "Optimized for seasonal rotation of vegetable crops (Potatoes, Leafy Greens) with moderate shading levels.",
+                title: { en: "Seasonal Crops", he: "גידולים עונתיים" },
+                height: { en: "4m", he: "4 מ'" },
+                pitch: { en: "6.6m", he: "6.6 מ'" },
+                cover: { en: "36%", he: "36%" },
+                crop: { en: "Potatoes/Greens", he: "תפו\"א/ירקות עלים" },
+                type: "1P",
+                desc: {
+                    en: "Optimized for seasonal rotation of vegetable crops (Potatoes, Leafy Greens) with moderate shading levels.",
+                    he: "מותאם למחזור עונתי של ירקות (תפוחי אדמה, ירקות עלים) עם רמות הצללה מתונות."
+                },
                 pos: { x: 50, z: -40 }, dim: { w: 30, d: 30 }
             },
             6: { 
-                title: "Orchards (1P)", height: "4m", pitch: "6.6m", cover: "36%", crop: "Mango / Lychee", type: "Orchard",
-                desc: "Integration with permanent fruit trees. Solar panels provide critical protection from extreme midday desert sun, reducing water stress.",
+                title: { en: "Orchards (1P)", he: "מטעים (1P)" },
+                height: { en: "4m", he: "4 מ'" },
+                pitch: { en: "6.6m", he: "6.6 מ'" },
+                cover: { en: "36%", he: "36%" },
+                crop: { en: "Mango / Lychee", he: "מנגו / ליצ'י" },
+                type: "Orchard",
+                desc: {
+                    en: "Integration with permanent fruit trees. Solar panels provide critical protection from extreme midday desert sun, reducing water stress.",
+                    he: "שילוב עם עצי פרי קבועים. הפאנלים הסולאריים מספקים הגנה קריטית משמש המדבר הקיצונית בצהריים, ומפחיתים עקת מים."
+                },
                 pos: { x: 5, z: -40 }, dim: { w: 45, d: 30 }
             },
             7: { 
-                title: "Control Plot", height: "N/A", pitch: "N/A", cover: "0%", crop: "Orchards", type: "Control",
-                desc: "5 Dunam open-field reference plot. Trees here are grown without panels to provide scientific baseline data for water use efficiency.",
+                title: { en: "Control Plot", he: "חלקת ביקורת" },
+                height: { en: "N/A", he: "לא רלוונטי" },
+                pitch: { en: "N/A", he: "לא רלוונטי" },
+                cover: { en: "0%", he: "0%" },
+                crop: { en: "Orchards", he: "מטעים" },
+                type: "Control",
+                desc: {
+                    en: "5 Dunam open-field reference plot. Trees here are grown without panels to provide scientific baseline data for water use efficiency.",
+                    he: "חלקת ייחוס בשטח פתוח של 5 דונם. העצים כאן גדלים ללא פאנלים כדי לספק נתוני בסיס מדעיים ליעילות שימוש במים."
+                },
                 pos: { x: -50, z: -20 }, dim: { w: 25, d: 40 }
             },
             8: { 
-                title: "Agri-Shadow", height: "Vertical", pitch: "N/A", cover: "Variable", crop: "Shadow Analysis", type: "Structure",
-                desc: "Vertical structure ('Agri-Wall') and net testing facility designed to analyze specific shadow density effects on soil temperature.",
+                title: { en: "Agri-Shadow", he: "אגרי-צל" },
+                height: { en: "Vertical", he: "אנכי" },
+                pitch: { en: "N/A", he: "לא רלוונטי" },
+                cover: { en: "Variable", he: "משתנה" },
+                crop: { en: "Shadow Analysis", he: "ניתוח צל" },
+                type: "Structure",
+                desc: {
+                    en: "Vertical structure ('Agri-Wall') and net testing facility designed to analyze specific shadow density effects on soil temperature.",
+                    he: "מבנה אנכי ('קיר-אגרי') ומתקן בדיקת רשתות שתוכנן לנתח השפעות צפיפות צל ספציפיות על טמפרטורת הקרקע."
+                },
                 pos: { x: -60, z: 25 }, dim: { w: 15, d: 35 }
             }
         };
@@ -374,6 +599,7 @@
             setupPostFX();
 
             generateLegend();
+            setupLanguageToggle();
 
             window.addEventListener('resize', onResize);
             renderer.domElement.addEventListener('mousemove', onMouseMove);
@@ -394,6 +620,67 @@
                 }, 500);
             }, 800);
         }
+
+        function setupLanguageToggle() {
+            const langBtns = document.querySelectorAll('.lang-btn');
+            langBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const lang = this.dataset.lang;
+                    if (lang !== currentLang) {
+                        currentLang = lang;
+                        langBtns.forEach(function(b) {
+                            b.classList.remove('active');
+                        });
+                        this.classList.add('active');
+                        updateLanguage();
+                    }
+                });
+            });
+        }
+
+        function updateLanguage() {
+    const t = TRANSLATIONS[currentLang];
+    
+    if (currentLang === 'he') {
+        document.body.classList.add('rtl');
+    } else {
+        document.body.classList.remove('rtl');
+    }
+
+    // Update header and labels
+    document.getElementById('header-title').innerText = t.headerTitle;
+    document.getElementById('header-subtitle').innerText = t.headerSubtitle;
+    document.getElementById('header-date').innerText = t.headerDate;
+    document.getElementById('loader-text').innerText = t.loaderText;
+    document.getElementById('label-height').innerText = t.labelHeight;
+    document.getElementById('label-pitch').innerText = t.labelPitch;
+    document.getElementById('label-cover').innerText = t.labelCover;
+    document.getElementById('label-crop').innerText = t.labelCrop;
+
+    // Update legend items
+    const legendItems = document.querySelectorAll('.legend-item');
+    legendItems.forEach(function(item) {
+        const id = parseInt(item.dataset.id);
+        const data = SITE_DATA[id];
+        if (data) {
+            const span = item.querySelector('span');
+            if (span) {
+                span.innerText = data.title[currentLang];
+            }
+        }
+    });
+
+    // Update popup if one is currently open
+    if (selectedId !== null) {
+        const data = SITE_DATA[selectedId];
+        document.getElementById('explainer-title').innerText = data.title[currentLang];
+        document.getElementById('stat-height').innerText = data.height[currentLang];
+        document.getElementById('stat-pitch').innerText = data.pitch[currentLang];
+        document.getElementById('stat-cover').innerText = data.cover[currentLang];
+        document.getElementById('stat-crop').innerText = data.crop[currentLang];
+        document.getElementById('explainer-desc').innerText = data.desc[currentLang];
+    }
+}
 
         function createGround() {
             const canvas = document.createElement('canvas');
@@ -470,7 +757,7 @@
                 createStructureMesh(group, data.dim.w, data.dim.d);
             } else {
                 createSolarArray(group, data);
-                populateVegetation(group, data.dim.w, data.dim.d, data.crop);
+                populateVegetation(group, data.dim.w, data.dim.d, data.crop[currentLang]);
             }
 
             createLabel(group, id);
@@ -538,12 +825,12 @@
         }
 
         function populateVegetation(parent, w, d, cropType) {
-            const count = (cropType.includes('Tree') || cropType.includes('Orchard')) ? 12 : 40;
+            const count = (cropType.includes('Tree') || cropType.includes('Orchard') || cropType.includes('מטע') || cropType.includes('עץ')) ? 12 : 40;
             for (let i = 0; i < count; i++) {
                 const x = (Math.random() - 0.5) * (w - 2);
                 const z = (Math.random() - 0.5) * (d - 2);
                 let p;
-                if (cropType.includes('Tree') || cropType.includes('Orchard')) {
+                if (cropType.includes('Tree') || cropType.includes('Orchard') || cropType.includes('מטע') || cropType.includes('עץ')) {
                     const g = new THREE.Group();
                     const t = new THREE.Mesh(
                         new THREE.CylinderGeometry(0.1, 0.15, 1),
@@ -558,7 +845,7 @@
                     l.position.y = 1.5;
                     g.add(l);
                     p = g;
-                } else if (cropType.includes('Vine')) {
+                } else if (cropType.includes('Vine') || cropType.includes('ענב') || cropType.includes('גפן')) {
                     p = new THREE.Mesh(
                         new THREE.CylinderGeometry(0.2, 0.1, 1.2),
                         new THREE.MeshStandardMaterial({ color: 0x6B8C42 })
@@ -634,7 +921,7 @@
                 const item = document.createElement('div');
                 item.className = 'legend-item';
                 item.dataset.id = key;
-                item.innerHTML = '<div class="legend-number">' + key + '</div><span>' + data.title + '</span>';
+                item.innerHTML = '<div class="legend-number">' + key + '</div><span>' + data.title[currentLang] + '</span>';
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -675,13 +962,13 @@
                 }
             });
 
-            document.getElementById('explainer-title').innerText = data.title;
+            document.getElementById('explainer-title').innerText = data.title[currentLang];
             document.getElementById('explainer-id').innerText = id;
-            document.getElementById('stat-height').innerText = data.height;
-            document.getElementById('stat-pitch').innerText = data.pitch;
-            document.getElementById('stat-cover').innerText = data.cover;
-            document.getElementById('stat-crop').innerText = data.crop;
-            document.getElementById('explainer-desc').innerText = data.desc;
+            document.getElementById('stat-height').innerText = data.height[currentLang];
+            document.getElementById('stat-pitch').innerText = data.pitch[currentLang];
+            document.getElementById('stat-cover').innerText = data.cover[currentLang];
+            document.getElementById('stat-crop').innerText = data.crop[currentLang];
+            document.getElementById('explainer-desc').innerText = data.desc[currentLang];
             
             const card = document.getElementById('explainer-card');
             card.classList.add('visible');
