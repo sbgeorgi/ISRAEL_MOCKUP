@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Southern Arava R&D - Interactive Agrivoltaics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #002147;
+            --accent: #E87A24;
+            --text-light: #E6F1FF;
+            --bg-glass: rgba(16, 33, 62, 0.90);
+            --bg-glass-hover: rgba(16, 33, 62, 1);
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #87CEEB;
+        }
+
+        /* --- UI Overlay --- */
+        
+        /* 1. Header */
+        .header-container {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .header-content {
+            background: var(--bg-glass);
+            backdrop-filter: blur(12px);
+            padding: 20px 25px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            pointer-events: auto;
+        }
+
+        .header-content h1 { margin: 0; font-size: 1.4rem; color: white; font-weight: 700; text-transform: uppercase; }
+        .header-content h2 { margin: 5px 0 0; font-size: 0.95rem; color: var(--accent); font-weight: 600; }
+
+        /* 2. Legend (Right Panel) */
+        .legend-container {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: auto;
+            z-index: 10;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .legend-item {
+            background: var(--bg-glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            width: 240px;
+            user-select: none;
+        }
+
+        .legend-item:hover {
+            transform: translateX(-5px);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .legend-item.active {
+            background: var(--accent);
+            color: white;
+            border-color: white;
+            box-shadow: 0 0 15px rgba(232, 122, 36, 0.4);
+            transform: translateX(-5px);
+        }
+
+        .legend-number {
+            background: white;
+            color: var(--accent);
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+
+        .legend-item.active .legend-number {
+            background: white;
+            color: var(--accent);
+        }
+        
+        /* 3. Popup Info Card - STATIC POSITION */
+        #explainer-card {
+            position: absolute;
+            display: none;
+            opacity: 0;
+            bottom: 24px;
+            left: 24px;
+            width: 360px;
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 24px;
+            color: white;
+            pointer-events: auto;
+            z-index: 20;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translateY(20px);
+        }
+
+        #explainer-card.visible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #explainer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+        }
+
+        #explainer-title { font-size: 1.2rem; font-weight: 700; color: var(--accent); margin: 0; }
+        
+        #explainer-id {
+            background: white; color: var(--accent); font-weight: 800;
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-box {
+            background: rgba(255,255,255,0.05);
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .stat-label { display: block; color: #8892B0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .stat-value { display: block; color: #fff; font-weight: 600; font-size: 0.95rem; }
+
+        #explainer-desc {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #CCD6F6;
+        }
+
+        #close-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        #close-btn:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
+        /* Loading Screen */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0B2545; display: flex;
+            justify-content: center; align-items: center; flex-direction: column;
+            z-index: 100; transition: opacity 0.5s;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <p style="color:white; margin-top:20px; font-weight:500;">Loading Southern Arava R&D Center...</p>
+    </div>
+
+    <!-- Header -->
+    <div class="header-container">
+        <div class="header-content">
+            <h1>Southern Arava R&D</h1>
+            <h2>Hyper Arid Desert Agrivoltaics</h2>
+            <p style="font-size:0.8rem; margin:10px 0 0 0; color:#ccc;">Interactive Site Map (January 2026)</p>
+        </div>
+    </div>
+
+    <!-- Right Panel Legend -->
+    <div class="legend-container" id="legend-list">
+    </div>
+
+    <!-- Detailed Popup Card - STATIC POSITION -->
+    <div id="explainer-card">
+        <button id="close-btn">&times;</button>
+        <div id="explainer-header">
+            <h3 id="explainer-title">Zone Title</h3>
+            <div id="explainer-id">0</div>
+        </div>
+        <div class="stat-grid">
+            <div class="stat-box">
+                <span class="stat-label">Axis Height</span>
+                <span class="stat-value" id="stat-height">--</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Pitch/Span</span>
+                <span class="stat-value" id="stat-pitch">--</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Coverage</span>
+                <span class="stat-value" id="stat-cover">--</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Crop Type</span>
+                <span class="stat-value" id="stat-crop">--</span>
+            </div>
+        </div>
+        <div id="explainer-desc">Description text goes here.</div>
+    </div>
+
+    <!-- Three.js Canvas -->
+    <div id="canvas-container" style="width:100%; height:100vh;"></div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
+
+        const SITE_DATA = {
+            1: { 
+                title: "2P Tracker System", height: "3.5m", pitch: "11m", cover: "42%", crop: "Seasonal Veg", type: "2P",
+                desc: "High-clearance double-stacked (2P) panels allow for larger machinery access. This zone tests maximum ground coverage ratio in arid conditions.",
+                pos: { x: 50, z: 30 }, dim: { w: 30, d: 25 }
+            },
+            2: { 
+                title: "1P Standard Tracker", height: "4m", pitch: "7m", cover: "34%", crop: "Future Greenhouse", type: "1P",
+                desc: "Standard single-axis tracker configuration. Currently prepared for future closed greenhouse integration to test humidity retention.",
+                pos: { x: 5, z: 40 }, dim: { w: 45, d: 15 }
+            },
+            3: { 
+                title: "Vineyard Integration", height: "4m", pitch: "7m", cover: "34%", crop: "Grapes (2 var)", type: "Vineyard",
+                desc: "Specialized trellis system integrated directly into the solar structure posts. Row spacing is optimized for viticulture machinery.",
+                pos: { x: 5, z: 10 }, dim: { w: 35, d: 30 }
+            },
+            4: { 
+                title: "Mizar East-West", height: "4m", pitch: "5.5m", cover: "44%", crop: "Field Crops", type: "EW",
+                desc: "East-West orientation ('Mizar') creates a flattened daily energy production curve and provides high density shading for light-sensitive crops.",
+                pos: { x: 50, z: -5 }, dim: { w: 25, d: 25 }
+            },
+            5: { 
+                title: "Seasonal Crops", height: "4m", pitch: "6.6m", cover: "36%", crop: "Potatoes/Greens", type: "1P",
+                desc: "Optimized for seasonal rotation of vegetable crops (Potatoes, Leafy Greens) with moderate shading levels.",
+                pos: { x: 50, z: -40 }, dim: { w: 30, d: 30 }
+            },
+            6: { 
+                title: "Orchards (1P)", height: "4m", pitch: "6.6m", cover: "36%", crop: "Mango / Lychee", type: "Orchard",
+                desc: "Integration with permanent fruit trees. Solar panels provide critical protection from extreme midday desert sun, reducing water stress.",
+                pos: { x: 5, z: -40 }, dim: { w: 45, d: 30 }
+            },
+            7: { 
+                title: "Control Plot", height: "N/A", pitch: "N/A", cover: "0%", crop: "Orchards", type: "Control",
+                desc: "5 Dunam open-field reference plot. Trees here are grown without panels to provide scientific baseline data for water use efficiency.",
+                pos: { x: -50, z: -20 }, dim: { w: 25, d: 40 }
+            },
+            8: { 
+                title: "Agri-Shadow", height: "Vertical", pitch: "N/A", cover: "Variable", crop: "Shadow Analysis", type: "Structure",
+                desc: "Vertical structure ('Agri-Wall') and net testing facility designed to analyze specific shadow density effects on soil temperature.",
+                pos: { x: -60, z: 25 }, dim: { w: 15, d: 35 }
+            }
+        };
+
+        let scene, camera, renderer, controls, composer, outlinePass;
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let interactiveObjects = [];
+        let zoneGroups = {};
+        let selectedId = null;
+        let isAnimating = false;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            scene.fog = new THREE.FogExp2(0xE6D4B8, 0.005);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 500);
+            camera.position.set(0, 90, 110);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 - 0.1;
+
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0xE6D4B8, 0.6);
+            scene.add(hemiLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
+            dirLight.position.set(-50, 80, 50);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.set(2048, 2048);
+            dirLight.shadow.camera.left = -100;
+            dirLight.shadow.camera.right = 100;
+            dirLight.shadow.camera.top = 100;
+            dirLight.shadow.camera.bottom = -100;
+            scene.add(dirLight);
+
+            createGround();
+            createRoads();
+            buildScene();
+
+            setupPostFX();
+
+            generateLegend();
+
+            window.addEventListener('resize', onResize);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('click', onClick);
+            
+            document.getElementById('close-btn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                resetSelection();
+            });
+
+            animate();
+            
+            setTimeout(function() {
+                const loader = document.getElementById('loader');
+                loader.style.opacity = '0';
+                setTimeout(function() {
+                    loader.remove();
+                }, 500);
+            }, 800);
+        }
+
+        function createGround() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = "#E6D4B8";
+            ctx.fillRect(0, 0, 512, 512);
+            for (let i = 0; i < 40000; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? "#D9C6A5" : "#F2E6D4";
+                ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(20, 20);
+
+            const plane = new THREE.Mesh(
+                new THREE.PlaneGeometry(400, 400),
+                new THREE.MeshStandardMaterial({ map: tex, roughness: 1 })
+            );
+            plane.rotation.x = -Math.PI / 2;
+            plane.receiveShadow = true;
+            scene.add(plane);
+        }
+
+        function createRoads() {
+            const roadMat = new THREE.MeshStandardMaterial({ color: 0xDDCBA0 });
+            const vRoad = new THREE.Mesh(new THREE.PlaneGeometry(8, 200), roadMat);
+            vRoad.rotation.x = -Math.PI / 2;
+            vRoad.position.set(25, 0.05, 0);
+            scene.add(vRoad);
+            const hRoad1 = new THREE.Mesh(new THREE.PlaneGeometry(150, 5), roadMat);
+            hRoad1.rotation.x = -Math.PI / 2;
+            hRoad1.position.set(0, 0.05, 25);
+            scene.add(hRoad1);
+            const hRoad2 = new THREE.Mesh(new THREE.PlaneGeometry(150, 5), roadMat);
+            hRoad2.rotation.x = -Math.PI / 2;
+            hRoad2.position.set(0, 0.05, -20);
+            scene.add(hRoad2);
+        }
+
+        function buildScene() {
+            Object.keys(SITE_DATA).forEach(function(key) {
+                const id = parseInt(key);
+                createZone(id, SITE_DATA[id]);
+            });
+        }
+
+        function createZone(id, data) {
+            const group = new THREE.Group();
+            group.position.set(data.pos.x, 0, data.pos.z);
+            group.userData = { id: id };
+            zoneGroups[id] = group;
+
+            const hitGeo = new THREE.BoxGeometry(data.dim.w, 6, data.dim.d);
+            const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+            const hitBox = new THREE.Mesh(hitGeo, hitMat);
+            hitBox.position.y = 3;
+            hitBox.userData = { id: id, isHitbox: true };
+            group.add(hitBox);
+            interactiveObjects.push(hitBox);
+
+            const groundMark = new THREE.Mesh(
+                new THREE.PlaneGeometry(data.dim.w, data.dim.d),
+                new THREE.MeshBasicMaterial({ color: 0xE87A24, transparent: true, opacity: 0.1, side: THREE.DoubleSide })
+            );
+            groundMark.rotation.x = -Math.PI / 2;
+            groundMark.position.y = 0.1;
+            group.add(groundMark);
+
+            if (data.type === 'Control') {
+                populateVegetation(group, data.dim.w, data.dim.d, 'tree');
+            } else if (data.type === 'Structure') {
+                createStructureMesh(group, data.dim.w, data.dim.d);
+            } else {
+                createSolarArray(group, data);
+                populateVegetation(group, data.dim.w, data.dim.d, data.crop);
+            }
+
+            createLabel(group, id);
+
+            scene.add(group);
+        }
+
+        function createSolarArray(parent, data) {
+            const rows = 4;
+            const spacing = data.dim.d / rows;
+            let pHeight = 3.5;
+            let pWidth = 1.5;
+            let tilt = Math.PI / 6;
+            
+            if (data.type === '2P') {
+                pHeight = 5;
+                pWidth = 3;
+            }
+            if (data.type === 'EW') {
+                pHeight = 2.5;
+                tilt = 0.1;
+                pWidth = 4;
+            }
+
+            for (let i = 0; i < rows; i++) {
+                const z = (i - (rows - 1) / 2) * spacing;
+                for (let p = 0; p < 3; p++) {
+                    const x = (p - 1) * (data.dim.w * 0.4);
+                    const post = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.1, 0.1, pHeight),
+                        new THREE.MeshStandardMaterial({ color: 0x555555 })
+                    );
+                    post.position.set(x, pHeight / 2, z);
+                    post.castShadow = true;
+                    parent.add(post);
+                }
+                const panel = new THREE.Mesh(
+                    new THREE.BoxGeometry(data.dim.w, 0.05, pWidth),
+                    new THREE.MeshPhysicalMaterial({ color: 0x0B2545, roughness: 0.2, metalness: 0.6 })
+                );
+                panel.position.set(0, pHeight + 0.1, z);
+                panel.rotation.x = tilt;
+                panel.castShadow = true;
+                parent.add(panel);
+            }
+        }
+
+        function createStructureMesh(parent, w, d) {
+            const h = 6;
+            const postGeo = new THREE.CylinderGeometry(0.2, 0.2, h);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+            const positions = [[w / 2, d / 2], [-w / 2, d / 2], [w / 2, -d / 2], [-w / 2, -d / 2]];
+            positions.forEach(function(pos) {
+                const p = new THREE.Mesh(postGeo, mat);
+                p.position.set(pos[0], h / 2, pos[1]);
+                parent.add(p);
+            });
+            const net = new THREE.Mesh(
+                new THREE.PlaneGeometry(w, d),
+                new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide, transparent: true, opacity: 0.4 })
+            );
+            net.rotation.x = -Math.PI / 2;
+            net.position.y = h;
+            parent.add(net);
+        }
+
+        function populateVegetation(parent, w, d, cropType) {
+            const count = (cropType.includes('Tree') || cropType.includes('Orchard')) ? 12 : 40;
+            for (let i = 0; i < count; i++) {
+                const x = (Math.random() - 0.5) * (w - 2);
+                const z = (Math.random() - 0.5) * (d - 2);
+                let p;
+                if (cropType.includes('Tree') || cropType.includes('Orchard')) {
+                    const g = new THREE.Group();
+                    const t = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.1, 0.15, 1),
+                        new THREE.MeshStandardMaterial({ color: 0x5D4037 })
+                    );
+                    t.position.y = 0.5;
+                    g.add(t);
+                    const l = new THREE.Mesh(
+                        new THREE.DodecahedronGeometry(0.8),
+                        new THREE.MeshStandardMaterial({ color: 0x4A6B3C })
+                    );
+                    l.position.y = 1.5;
+                    g.add(l);
+                    p = g;
+                } else if (cropType.includes('Vine')) {
+                    p = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.2, 0.1, 1.2),
+                        new THREE.MeshStandardMaterial({ color: 0x6B8C42 })
+                    );
+                    p.position.y = 0.6;
+                } else {
+                    p = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.3),
+                        new THREE.MeshStandardMaterial({ color: 0x76B947 })
+                    );
+                    p.position.y = 0.3;
+                }
+                p.position.x += x;
+                p.position.z += z;
+                parent.add(p);
+            }
+        }
+
+        function createLabel(parent, id) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = "rgba(232, 122, 36, 1.0)";
+            ctx.beginPath();
+            ctx.arc(64, 64, 45, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = "white";
+            ctx.stroke();
+            
+            ctx.fillStyle = "white";
+            ctx.font = "bold 50px Inter, Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(id, 64, 66);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
+            sprite.scale.set(6, 6, 1);
+            sprite.position.y = 8;
+            sprite.renderOrder = 999;
+            sprite.userData = { id: id, isLabel: true };
+            
+            parent.add(sprite);
+            interactiveObjects.push(sprite);
+        }
+
+        function setupPostFX() {
+            composer = new EffectComposer(renderer);
+            composer.addPass(new RenderPass(scene, camera));
+            
+            outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
+            outlinePass.visibleEdgeColor.setHex(0xE87A24);
+            outlinePass.hiddenEdgeColor.setHex(0xE87A24);
+            outlinePass.edgeStrength = 4;
+            outlinePass.edgeThickness = 1;
+            composer.addPass(outlinePass);
+            
+            const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+            bloom.threshold = 0.8;
+            bloom.strength = 0.3;
+            bloom.radius = 0.1;
+            composer.addPass(bloom);
+        }
+
+        function generateLegend() {
+            const list = document.getElementById('legend-list');
+            Object.keys(SITE_DATA).forEach(function(key) {
+                const id = parseInt(key);
+                const data = SITE_DATA[key];
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.dataset.id = key;
+                item.innerHTML = '<div class="legend-number">' + key + '</div><span>' + data.title + '</span>';
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    focusZone(id);
+                });
+                list.appendChild(item);
+            });
+        }
+
+        function focusZone(id) {
+            if (isAnimating) return;
+            
+            selectedId = id;
+            const data = SITE_DATA[id];
+            const targetGroup = zoneGroups[id];
+            
+            if (!targetGroup) {
+                console.error('Zone group not found for id:', id);
+                return;
+            }
+
+            outlinePass.selectedObjects = [targetGroup];
+
+            const groupPos = new THREE.Vector3();
+            targetGroup.getWorldPosition(groupPos);
+            
+            const camOffset = new THREE.Vector3(0, 40, 50);
+            const endPos = groupPos.clone().add(camOffset);
+            
+            animateCamera(endPos, groupPos);
+
+            document.querySelectorAll('.legend-item').forEach(function(el) {
+                const isActive = parseInt(el.dataset.id) === id;
+                if (isActive) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+
+            document.getElementById('explainer-title').innerText = data.title;
+            document.getElementById('explainer-id').innerText = id;
+            document.getElementById('stat-height').innerText = data.height;
+            document.getElementById('stat-pitch').innerText = data.pitch;
+            document.getElementById('stat-cover').innerText = data.cover;
+            document.getElementById('stat-crop').innerText = data.crop;
+            document.getElementById('explainer-desc').innerText = data.desc;
+            
+            const card = document.getElementById('explainer-card');
+            card.classList.add('visible');
+        }
+
+        function resetSelection() {
+            selectedId = null;
+            outlinePass.selectedObjects = [];
+            document.querySelectorAll('.legend-item').forEach(function(el) {
+                el.classList.remove('active');
+            });
+            document.getElementById('explainer-card').classList.remove('visible');
+            
+            animateCamera(new THREE.Vector3(0, 90, 110), new THREE.Vector3(0, 0, 0));
+        }
+
+        function onMouseMove(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            if (!selectedId && !isAnimating) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(interactiveObjects);
+                if (intersects.length > 0) {
+                    const obj = intersects[0].object;
+                    document.body.style.cursor = 'pointer';
+                    if (obj.parent) {
+                        outlinePass.selectedObjects = [obj.parent];
+                    }
+                } else {
+                    document.body.style.cursor = 'default';
+                    outlinePass.selectedObjects = [];
+                }
+            }
+        }
+
+        function onClick(event) {
+            if (isAnimating) return;
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(interactiveObjects);
+
+            if (intersects.length > 0) {
+                const obj = intersects[0].object;
+                const id = obj.userData.id;
+                if (id !== undefined && id !== null) {
+                    focusZone(id);
+                }
+            } else {
+                if (selectedId !== null) {
+                    resetSelection();
+                }
+            }
+        }
+
+        function animateCamera(endPos, target) {
+            const startPos = camera.position.clone();
+            const startTarget = controls.target.clone();
+            
+            isAnimating = true;
+            controls.enabled = false;
+
+            let progress = 0;
+            const duration = 60;
+            
+            function step() {
+                progress++;
+                const t = progress / duration;
+                const easeT = 1 - Math.pow(1 - t, 3);
+                
+                if (progress >= duration) {
+                    camera.position.copy(endPos);
+                    controls.target.copy(target);
+                    controls.enabled = true;
+                    isAnimating = false;
+                    return;
+                }
+                
+                camera.position.lerpVectors(startPos, endPos, easeT);
+                controls.target.lerpVectors(startTarget, target, easeT);
+                requestAnimationFrame(step);
+            }
+            step();
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            composer.render();
+        }
+
+        init();
+    </script>
+</body>
+</html>
